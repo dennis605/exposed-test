@@ -1,13 +1,13 @@
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
-object Users : Table() {
+object Bewohner : Table() {
     val id = varchar("id", 10).primaryKey() // Column<String>
     val name = varchar("name", length = 50) // Column<String>
-    val cityId = (integer("city_id") references Cities.id).nullable() // Column<Int?>
+    val cityId = (integer("city_id") references Kollege.id).nullable() // Column<Int?>
 }
 
-object Cities : Table() {
+object Kollege : Table() {
     val id = integer("id").autoIncrement().primaryKey() // Column<Int>
     val name = varchar("name", 50) // Column<String>
 }
@@ -15,88 +15,90 @@ object Cities : Table() {
 fun main(args: Array<String>) {
     Database.connect("jdbc:h2:mem:test", driver = "org.h2.Driver")
 
+    val choice = readLine()
+
     transaction {
-        SchemaUtils.create (Cities, Users)
+        SchemaUtils.create (Kollege, Bewohner)
 
-        val saintPetersburgId = Cities.insert {
-            it[name] = "St. Petersburg"
-        } get Cities.id
+        val saintPetersburgId = Kollege.insert {
+            it[name] = "$choice"
+        } get Kollege.id
 
-        val munichId = Cities.insert {
+        val munichId = Kollege.insert {
             it[name] = "Munich"
-        } get Cities.id
+        } get Kollege.id
 
-        Cities.insert {
+        Kollege.insert {
             it[name] = "Prague"
         }
 
-        Users.insert {
+        Bewohner.insert {
             it[id] = "andrey"
             it[name] = "Andrey"
             it[cityId] = saintPetersburgId
         }
 
-        Users.insert {
+        Bewohner.insert {
             it[id] = "sergey"
             it[name] = "Sergey"
             it[cityId] = munichId
         }
 
-        Users.insert {
+        Bewohner.insert {
             it[id] = "eugene"
             it[name] = "Eugene"
             it[cityId] = munichId
         }
 
-        Users.insert {
+        Bewohner.insert {
             it[id] = "alex"
             it[name] = "Alex"
             it[cityId] = null
         }
 
-        Users.insert {
+        Bewohner.insert {
             it[id] = "smth"
             it[name] = "Something"
             it[cityId] = null
         }
 
-        Users.update({Users.id eq "alex"}) {
+        Bewohner.update({Bewohner.id eq "alex"}) {
             it[name] = "Alexey"
         }
 
-        Users.deleteWhere{Users.name like "%thing"}
+        Bewohner.deleteWhere{Bewohner.name like "%thing"}
 
         println("All cities:")
 
-        for (city in Cities.selectAll()) {
-            println("${city[Cities.id]}: ${city[Cities.name]}")
+        for (city in Kollege.selectAll()) {
+            println("${city[Kollege.id]}: ${city[Kollege.name]}")
         }
 
         println("Manual join:")
-        (Users innerJoin Cities).slice(Users.name, Cities.name).
-            select {(Users.id.eq("andrey") or Users.name.eq("Sergey")) and
-                    Users.id.eq("sergey") and Users.cityId.eq(Cities.id)}.forEach {
-            println("${it[Users.name]} lives in ${it[Cities.name]}")
+        (Bewohner innerJoin Kollege).slice(Bewohner.name, Kollege.name).
+            select {(Bewohner.id.eq("andrey") or Bewohner.name.eq("Sergey")) and
+                    Bewohner.id.eq("sergey") and Bewohner.cityId.eq(Kollege.id)}.forEach {
+            println("${it[Bewohner.name]} lives in ${it[Kollege.name]}")
         }
 
         println("Join with foreign key:")
 
 
-        (Users innerJoin Cities).slice(Users.name, Users.cityId, Cities.name).
-            select {Cities.name.eq("St. Petersburg") or Users.cityId.isNull()}.forEach {
-            if (it[Users.cityId] != null) {
-                println("${it[Users.name]} lives in ${it[Cities.name]}")
+        (Bewohner innerJoin Kollege).slice(Bewohner.name, Bewohner.cityId, Kollege.name).
+            select {Kollege.name.eq("St. Petersburg") or Bewohner.cityId.isNull()}.forEach {
+            if (it[Bewohner.cityId] != null) {
+                println("${it[Bewohner.name]} lives in ${it[Kollege.name]}")
             }
             else {
-                println("${it[Users.name]} lives nowhere")
+                println("${it[Bewohner.name]} lives nowhere")
             }
         }
 
         println("Functions and group by:")
 
-        ((Cities innerJoin Users).slice(Cities.name, Users.id.count()).selectAll().groupBy(Cities.name)).forEach {
-            val cityName = it[Cities.name]
-            val userCount = it[Users.id.count()]
+        ((Kollege innerJoin Bewohner).slice(Kollege.name, Bewohner.id.count()).selectAll().groupBy(Kollege.name)).forEach {
+            val cityName = it[Kollege.name]
+            val userCount = it[Bewohner.id.count()]
 
             if (userCount > 0) {
                 println("$userCount user(s) live(s) in $cityName")
@@ -105,7 +107,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        SchemaUtils.drop (Users, Cities)
+        SchemaUtils.drop (Bewohner, Kollege)
 
     }
 }
