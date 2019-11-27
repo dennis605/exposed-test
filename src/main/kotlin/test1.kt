@@ -4,7 +4,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 // Object Bewohner
 object Bewohner : Table() {
     val id = varchar("id", 10).primaryKey() // Column<String>
-    val firstName_Bewohner = varchar("name", length = 50) // Column<String>
+    val firstName_Bewohner = varchar("name", length = 50) // Column<String>>
     val lastName_Bewohner = varchar("name", length = 50) // Column<String>
 
     val cityId = (integer("city_id") references Kollege.id).nullable() // Column<Int?>
